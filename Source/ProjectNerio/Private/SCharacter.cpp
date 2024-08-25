@@ -1,12 +1,13 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ProjectNerio/Public/SCharacter.h"
+#include "SCharacter.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "SInputConfigData.h"
 #include "SInteractionComponent.h"
+#include "SInventoryComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
@@ -22,6 +23,11 @@ ASCharacter::ASCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
 	CameraComp->SetupAttachment(SpringArmComp);
+
+	InteractionComp = CreateDefaultSubobject<USInteractionComponent>(TEXT("InteractionComp"));
+
+	InventoryComp = CreateDefaultSubobject<USInventoryComponent>(TEXT("InventoryComp"));
+	
 }
 
 // Called when the game starts or when spawned
@@ -34,6 +40,8 @@ void ASCharacter::BeginPlay()
 void ASCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	
 }
 
 // Called to bind functionality to input
@@ -75,7 +83,7 @@ void ASCharacter::Move(const FInputActionValue& InputActionValue)
 		AddMovementInput(MovementDirection, MovementVector.Y);
 	}
 
-	/*
+	/* Direction of the camera. ControlRot is the camera
 	 * FRotator ControlRot = GetControlRotation();
 	 * ControlRot.Pitch = 0.0f;
 	 * ControlRot.Roll = 0.0f;
@@ -86,6 +94,10 @@ void ASCharacter::Move(const FInputActionValue& InputActionValue)
 
 void ASCharacter::Look(const FInputActionValue& InputActionValue)
 {
+	FVector2D RotationValue = InputActionValue.Get<FVector2D>();
+
+	AddControllerYawInput(RotationValue.X);
+	AddControllerPitchInput(RotationValue.Y);
 }
 
 void ASCharacter::PrimaryInteract()

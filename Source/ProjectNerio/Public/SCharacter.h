@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "SCharacter.generated.h"
 
+class USInventoryComponent;
 class USInteractionComponent;
 class UInputMappingContext;
 class USInputConfigData;
@@ -31,13 +32,15 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	USInteractionComponent* InteractionComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USInventoryComponent* InventoryComp;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	USInputConfigData* InputConfigData;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputMappingContext* DefaultContext;
-
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
