@@ -1,12 +1,10 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
-#include "CoreMinimal.h"
 #include "SGameplayInterface.h"
-#include "GameFramework/Actor.h"
 #include "SStorageCrate.generated.h"
 
+class UBoxComponent;
 class USStorageComponent;
 
 UCLASS()
@@ -25,5 +23,18 @@ protected:
 	UStaticMeshComponent* BaseMesh;
 
 	UPROPERTY(VisibleAnywhere)
+	UBoxComponent* BoxCollision;
+
+	UPROPERTY(VisibleAnywhere)
 	USStorageComponent* StorageComp;
+
+	UPROPERTY(EditDefaultsOnly)
+	int32 StorageSize;
+
+	// UPROPERTY(EditDefaultsOnly, meta = (TitleProperty = "ItemName"), Replicated)
+	// TArray<FStorageItemStruct> Content;
+	
+	void AddToStorage();
+
+	void RemoveFromStorage();
 };

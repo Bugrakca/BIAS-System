@@ -27,7 +27,6 @@ ASCharacter::ASCharacter()
 	InteractionComp = CreateDefaultSubobject<USInteractionComponent>(TEXT("InteractionComp"));
 
 	InventoryComp = CreateDefaultSubobject<USInventoryComponent>(TEXT("InventoryComp"));
-	
 }
 
 // Called when the game starts or when spawned

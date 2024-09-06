@@ -3,34 +3,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SItemDataStructs.h"
 #include "Components/ActorComponent.h"
+#include "SItemDataStructs.h"
 #include "SInventoryComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSlotUpdate, int32, Index);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PROJECTNERIO_API USInventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
-	
-public:
-	UPROPERTY(BlueprintReadOnly)
-	TMap<FString, FSlotData> InventoryData;
 
-	TArray<FSlotData> WeaponData;
-	
-	TArray<FSlotData> ArmorData;
-
+protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UUserWidget> WidgetClass;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	UUserWidget* InventoryWidget;
-	
 	// Sets default values for this component's properties
 	USInventoryComponent();
 
-	void Add(const FItemData& Item, int32 Quantity);
+	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable)
 	void DropItem(const FItemData& Item, int32 Quantity);
@@ -40,4 +31,38 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void HideInventory();
+
+	void InitList(TArray<FSlotData>& Array, int32 Size);
+
+public:
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FSlotData> InventoryArray;
+
+	TArray<FSlotData> WeaponData;
+
+	TArray<FSlotData> ArmorData;
+
+	FText Weapon;
+
+	FText Armor;
+
+	int32 IndexCount;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnSlotUpdate OnSlotUpdate;
+
+	UPROPERTY(BlueprintReadOnly)
+	UUserWidget* InventoryWidget;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsIndexEmpty(int32 Index);
+
+	UFUNCTION(BlueprintCallable)
+	FSlotData& GetItemAtIndex(int32 Index);
+
+	void Add(const FItemData& Item, int32 Quantity);
+
+	int32 CreateNewItem(const FItemData& Item, int32 Quantity);
+
+	TArray<FSlotData> FindSimilarItems(TArray<FSlotData>& ItemArray, const FItemData& Item);
 };
