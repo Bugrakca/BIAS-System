@@ -18,7 +18,7 @@ void USInventorySlotWidget::NativeOnInitialized()
 void USInventorySlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
+
 	// InventoryComp->OnSlotUpdate.AddDynamic(this, &USInventorySlotWidget::UpdateSlot);
 
 	UE_LOG(LogTemp, Log, TEXT("This is the InventorySlotWidget NativeConstruct"));
@@ -32,13 +32,13 @@ void USInventorySlotWidget::UpdateSlot()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Index is empty: %d"), UISlotIndex)
 		SlotButton->SetIsEnabled(false);
-		SlotIcon->SetVisibility(ESlateVisibility::Hidden);
-		GetTextAmountVisibility(UISlotIndex);
+		SlotIcon->SetVisibility(ESlateVisibility::Collapsed);
+		AmountText->SetText(FText::GetEmpty());
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Index is not empty, set the button and icon: %d"), UISlotIndex)
-		
+
 		SlotButton->SetIsEnabled(true);
 		auto& [Item, Quantity, SlotIndex] = InventoryComp->GetItemAtIndex(UISlotIndex);
 		UE_LOG(LogTemp, Warning, TEXT("Index is not empty, set the button and icon: %d"), SlotIndex)
@@ -47,29 +47,21 @@ void USInventorySlotWidget::UpdateSlot()
 		SlotIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
 		GetTextAmountVisibility(SlotIndex);
 	}
-
 }
 
-void USInventorySlotWidget::GetTextAmountVisibility(int32 Index)
+void USInventorySlotWidget::GetTextAmountVisibility(const int32 Index) const
 {
-	if (InventoryComp->IsIndexEmpty(Index))
+	if (!InventoryComp->InventoryArray[Index].Item.bIsStackable)
 	{
-		AmountText->SetVisibility(ESlateVisibility::Hidden);
+		AmountText->SetText(FText::GetEmpty());
 	}
 	else
 	{
-		if (!InventoryComp->InventoryArray[Index].Item.bIsStackable)
-		{
-			AmountText->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			AmountText->SetVisibility(ESlateVisibility::HitTestInvisible);
-		}
+		AmountText->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
-void USInventorySlotWidget::SetSlotIndex(int32 Index)
+void USInventorySlotWidget::SetSlotIndex(const int32 Index)
 {
 	UISlotIndex = Index;
 }

@@ -49,7 +49,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void GenerateSlotWidgets();
 
-	int32 FindColumn(int32 ArrayIndex);
+	int32 FindColumn(int32 ArrayIndex) const;
 
-	int32 FindRow(int32 ArrayIndex);
+	int32 FindRow(int32 ArrayIndex) const;
 };

@@ -23,9 +23,6 @@ struct FItemData //: public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bIsStackable;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int32 StackSize = 999;
 };
 
 USTRUCT(BlueprintType)

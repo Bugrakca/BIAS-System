@@ -55,7 +55,7 @@ void USInventoryWidget::OnSlotUpdated(int32 UpdatedIndex)
 	}
 }
 
-int32 USInventoryWidget::FindColumn(const int32 ArrayIndex)
+int32 USInventoryWidget::FindColumn(const int32 ArrayIndex) const
 {
 	const int32 Remainder = FMath::Modulo(ArrayIndex, SlotsPerRow);
 	const int32 Result = trunc(Remainder);
@@ -63,7 +63,7 @@ int32 USInventoryWidget::FindColumn(const int32 ArrayIndex)
 	return Result;
 }
 
-int32 USInventoryWidget::FindRow(const int32 ArrayIndex)
+int32 USInventoryWidget::FindRow(const int32 ArrayIndex) const
 {
 	const int32 Division = ArrayIndex / SlotsPerRow;
 	const int32 Result = trunc(Division);

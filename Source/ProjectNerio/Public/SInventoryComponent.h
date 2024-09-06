@@ -18,6 +18,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UUserWidget> WidgetClass;
 
+	UPROPERTY(BlueprintReadOnly)
+	int32 MaxStackSize;
+
 	// Sets default values for this component's properties
 	USInventoryComponent();
 
@@ -33,21 +36,27 @@ protected:
 	void HideInventory();
 
 	void InitList(TArray<FSlotData>& Array, int32 Size);
+	
+	int32 FindFirstAvailableSlot() const;
+
+	int32 FindNextStackableItem(const FItemData& StackableItem);
 
 public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FSlotData> InventoryArray;
 
+	UPROPERTY()
 	TArray<FSlotData> WeaponData;
 
+	UPROPERTY()
 	TArray<FSlotData> ArmorData;
 
+	UPROPERTY()
 	FText Weapon;
 
+	UPROPERTY()
 	FText Armor;
-
-	int32 IndexCount;
-
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnSlotUpdate OnSlotUpdate;
 
@@ -63,6 +72,6 @@ public:
 	void Add(const FItemData& Item, int32 Quantity);
 
 	int32 CreateNewItem(const FItemData& Item, int32 Quantity);
-
+	
 	TArray<FSlotData> FindSimilarItems(TArray<FSlotData>& ItemArray, const FItemData& Item);
 };

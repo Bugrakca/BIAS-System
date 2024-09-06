@@ -40,7 +40,9 @@ protected:
 
 	virtual void NativeOnInitialized() override;
 	
-	void GetTextAmountVisibility(int32 Index);
+	void GetTextAmountVisibility(int32 Index) const;
+
+	int32 FindNextAvailableSlot() const;
 
 public:
 	UFUNCTION()

@@ -6,8 +6,8 @@
 USInventoryComponent::USInventoryComponent()
 {
 	InventoryWidget = nullptr;
-
-	IndexCount = 0;
+	
+	MaxStackSize = 999;
 
 	Weapon = FText::FromString("Weapon");
 
@@ -29,41 +29,53 @@ void USInventoryComponent::BeginPlay()
 	}
 }
 
-void USInventoryComponent::Add(const FItemData& Item, int32 Quantity)
+void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 {
-	// Eger array kullarnirsam, belli limitte bir slot sayisi olmasi lazim. Her bir itemin indexini tutmam gerekiyor. Arayuzden indexlerin siralari belli olacak. ( 0 dan baslayip 31 e kadar gidecek)
-	// Tikladigim yerin indexini almis olmam lazim. Ve itemi biraktigim yerin indexini de daha sonra itemin verilerine eklemek lazim. Itemi ilk aldigim yer bos kalacagindan oranin icerisini de null yapmam gerekiyor.
+	int32 RemainingQuantity = Quantity;
 
-	const int32 Index = InventoryArray.IndexOfByPredicate([&Item](const FSlotData& DataElement)
+	// First, try to stack with existing items
+	for (int32 SlotIndex = 0; SlotIndex < InventoryArray.Num(); ++SlotIndex)
 	{
-		return DataElement.Item.Name.EqualTo(Item.Name);
-	});
+		FSlotData& CurrentSlot = InventoryArray[SlotIndex];
+        
+		if (CurrentSlot.Item.Name.EqualTo(Item.Name) && Item.bIsStackable)
+		{
+			int32 AvailableSpaceInSlot = MaxStackSize - CurrentSlot.Quantity;
+			if (AvailableSpaceInSlot > 0)
+			{
+				int32 QuantityToAddToSlot = FMath::Min(RemainingQuantity, AvailableSpaceInSlot);
+				CurrentSlot.Quantity += QuantityToAddToSlot;
+				RemainingQuantity -= QuantityToAddToSlot;
+                
+				OnSlotUpdate.Broadcast(SlotIndex);
 
-	// Check if there is same item
-	if (Index != INDEX_NONE && Item.bIsStackable) //&& InventoryArray[Index].Quantity < Item.StackSize
-	{
-		UE_LOG(LogTemp, Log, TEXT("Item is in the array"));
-		InventoryArray[Index].Quantity += Quantity;
-		OnSlotUpdate.Broadcast(Index);
-
-		// if (InventoryArray[Index].Quantity >= 999)
-		// {
-		// 	TODO: For ile ayni itemlari bulmam lazim. Her bir item 999 olana kadar Quantity eklenmesi gerekiyor.
-		// 	Eger elimizde bir deger kaldi ve 999dan kucuk, ekleyecek de bir yer kalmadiysa yeni bir item olusturmak gerekiyor.
-		// 	int32 NewItemQuantity = InventoryArray[Index].Quantity - Item.StackSize;
-		//
-		// 	BUG: For bitmeden item eklendigi icin for tekrar calisiyor ve ekstra 1 item daha ekliyor.
-		// 	InventoryArray[Index].Quantity = Item.StackSize;
-		//
-		// 	CreateNewItem(Item, NewItemQuantity);
-		// }
+				if (RemainingQuantity == 0)
+				{
+					UE_LOG(LogTemp, Log, TEXT("All items have been added."));
+					return; // All items have been added
+				}
+			}
+		}
 	}
-	else
+
+	// If there are still items remaining, create new stacks
+	while (RemainingQuantity > 0)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Item is not in the array. Adding now!"));
-		const int32 NewIndex = CreateNewItem(Item, Quantity);
-		UE_LOG(LogTemp, Warning, TEXT("Sending index: %d"), NewIndex);
-		OnSlotUpdate.Broadcast(NewIndex);
+		int32 QuantityForNewSlot = FMath::Min(RemainingQuantity, MaxStackSize);
+		int32 NewSlotIndex = CreateNewItem(Item, QuantityForNewSlot);
+        
+		if (NewSlotIndex != INDEX_NONE)
+		{
+			RemainingQuantity -= QuantityForNewSlot;
+			OnSlotUpdate.Broadcast(NewSlotIndex);
+		}
+		else
+		{
+			// Inventory is full
+			UE_LOG(LogTemp, Warning, TEXT("Inventory is full. Couldn't add %d %s"), 
+				   RemainingQuantity, *Item.Name.ToString());
+			break;
+		}
 	}
 }
 
@@ -85,7 +97,7 @@ void USInventoryComponent::DropItem(const FItemData& Item, int32 Quantity)
 			ItemData.Quantity -= Quantity;
 
 			OnSlotUpdate.Broadcast(Index);
-			// FItemData EmptyItemData{};
+			// TODO: If all of the item quantity dropped. Clear the slot (Replace it with an empty slot).
 			// FSlotData EmptyItem{};
 			//
 			// if (ItemData.Quantity <= 0)
@@ -128,7 +140,7 @@ FSlotData& USInventoryComponent::GetItemAtIndex(const int32 Index)
 
 void USInventoryComponent::InitList(TArray<FSlotData>& Array, const int32 Size)
 {
-	const FItemData EmptyItemData{};
+	// const FItemData EmptyItemData{};
 	FSlotData EmptyItem{};
 
 	for (int32 Index = 0; Index < Size; ++Index)
@@ -136,18 +148,55 @@ void USInventoryComponent::InitList(TArray<FSlotData>& Array, const int32 Size)
 		EmptyItem.SlotIndex = Index;
 		Array.Add(EmptyItem);
 	}
-	UE_LOG(LogTemp, Log, TEXT("Init The Inventory Array With Empty Structs"));
+	UE_LOG(LogTemp, Log, TEXT("Init The Inventory Array With Empty Struct"));
 }
 
-int32 USInventoryComponent::CreateNewItem(const FItemData& Item, int32 Quantity)
+int32 USInventoryComponent::CreateNewItem(const FItemData& Item, const int32 Quantity)
 {
 	UE_LOG(LogTemp, Log, TEXT("This is the InventoryComp CreateNewItem"));
-	const FSlotData NewItem(Item, Quantity, InventoryArray[IndexCount].SlotIndex);
 
-	InventoryArray[IndexCount] = NewItem;
-	IndexCount++;
+	if (const int32 AvailableSlot = FindFirstAvailableSlot(); AvailableSlot != INDEX_NONE)
+	{
+		const FSlotData NewItem(Item, Quantity, AvailableSlot);
+
+		InventoryArray[AvailableSlot] = NewItem;
 	
-	return NewItem.SlotIndex;
+		return AvailableSlot;
+	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("No empty slot found in inventory"));
+	return INDEX_NONE;
+}
+
+int32 USInventoryComponent::FindFirstAvailableSlot() const
+{
+	for (int32 EmptySlotIndex = 0; EmptySlotIndex < InventoryArray.Num(); ++EmptySlotIndex)
+	{
+		if (InventoryArray[EmptySlotIndex].Item.Name.IsEmpty() || InventoryArray[EmptySlotIndex].Quantity == 0)
+		{
+			return EmptySlotIndex;
+		}
+	}
+
+	return INDEX_NONE;
+}
+
+int32 USInventoryComponent::FindNextStackableItem(const FItemData& StackableItem)
+{
+	for (FSlotData& FoundItem : InventoryArray)
+	{
+		if (FoundItem.Item.Name.EqualTo(StackableItem.Name) && FoundItem.Item.bIsStackable)
+		{
+			const int32 AvailableSpaceInSlot = MaxStackSize - FoundItem.Quantity;
+			
+			if (AvailableSpaceInSlot > 0)
+			{
+				return FoundItem.SlotIndex;
+			}
+		}
+	}
+	// All slots are full.
+	return INDEX_NONE;
 }
 
 TArray<FSlotData> USInventoryComponent::FindSimilarItems(TArray<FSlotData>& ItemArray, const FItemData& Item)
