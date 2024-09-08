@@ -21,6 +21,12 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	int32 MaxStackSize;
 
+	UPROPERTY()
+	APlayerController* PlayerController;
+
+	UPROPERTY()
+	bool bIsMouseVisible;
+	
 	// Sets default values for this component's properties
 	USInventoryComponent();
 
@@ -29,17 +35,14 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void DropItem(const FItemData& Item, int32 Quantity);
 
-	UFUNCTION(BlueprintCallable)
-	void ShowInventory();
-
-	UFUNCTION(BlueprintCallable)
-	void HideInventory();
-
-	void InitList(TArray<FSlotData>& Array, int32 Size);
+	void InitList(TArray<FSlotData>& Array, const int32 Size);
 	
 	int32 FindFirstAvailableSlot() const;
 
 	int32 FindNextStackableItem(const FItemData& StackableItem);
+
+	UFUNCTION(BlueprintCallable)
+	void ToggleInventory();
 
 public:
 	UPROPERTY(BlueprintReadOnly)
@@ -64,12 +67,12 @@ public:
 	UUserWidget* InventoryWidget;
 
 	UFUNCTION(BlueprintCallable)
-	bool IsIndexEmpty(int32 Index);
+	bool IsIndexEmpty(const int32 Index);
 
 	UFUNCTION(BlueprintCallable)
-	FSlotData& GetItemAtIndex(int32 Index);
+	FSlotData& GetItemAtIndex(const int32 Index);
 
-	void Add(const FItemData& Item, int32 Quantity);
+	void Add(const FItemData& Item, const int32 Quantity);
 
 	int32 CreateNewItem(const FItemData& Item, int32 Quantity);
 	

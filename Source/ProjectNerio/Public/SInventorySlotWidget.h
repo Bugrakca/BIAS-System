@@ -42,11 +42,9 @@ protected:
 	
 	void GetTextAmountVisibility(int32 Index) const;
 
-	int32 FindNextAvailableSlot() const;
-
 public:
 	UFUNCTION()
-	void UpdateSlot();
+	void UpdateSlot() const;
 
 	UFUNCTION()
 	void SetSlotIndex(int32 Index);

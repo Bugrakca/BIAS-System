@@ -1,8 +1,8 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SInventoryComponent.h"
 #include "SInventorySlotWidget.h"
+#include "SInventoryComponent.h"
 #include "SInventoryWidget.h"
 #include "Components/Button.h"
 #include "Components/Image.h"
@@ -24,10 +24,8 @@ void USInventorySlotWidget::NativeConstruct()
 	UE_LOG(LogTemp, Log, TEXT("This is the InventorySlotWidget NativeConstruct"));
 }
 
-void USInventorySlotWidget::UpdateSlot()
+void USInventorySlotWidget::UpdateSlot() const
 {
-	// TArray<FSlotData> SimilarItems = InventoryComp->FindSimilarItems(InventoryComp->InventoryArray, InventoryComp->GetItemAtIndex(Index).Item);
-
 	if (InventoryComp->IsIndexEmpty(UISlotIndex))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Index is empty: %d"), UISlotIndex)
@@ -57,7 +55,7 @@ void USInventorySlotWidget::GetTextAmountVisibility(const int32 Index) const
 	}
 	else
 	{
-		AmountText->SetVisibility(ESlateVisibility::Visible);
+		AmountText->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 }
 

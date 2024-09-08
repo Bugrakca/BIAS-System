@@ -1,12 +1,14 @@
 ﻿#include "SInventoryComponent.h"
-
 #include "SStorageCrateWidget.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Framework/Application/NavigationConfig.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values for this component's properties
 USInventoryComponent::USInventoryComponent()
 {
 	InventoryWidget = nullptr;
-	
+
 	MaxStackSize = 999;
 
 	Weapon = FText::FromString("Weapon");
@@ -19,6 +21,14 @@ void USInventoryComponent::BeginPlay()
 	Super::BeginPlay();
 
 	InitList(InventoryArray, 40);
+
+	PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+
+	if (PlayerController)
+	{
+		PlayerController->bShowMouseCursor = false;
+		PlayerController->SetInputMode(FInputModeGameOnly());
+	}
 
 	if (WidgetClass)
 	{
@@ -37,7 +47,7 @@ void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 	for (int32 SlotIndex = 0; SlotIndex < InventoryArray.Num(); ++SlotIndex)
 	{
 		FSlotData& CurrentSlot = InventoryArray[SlotIndex];
-        
+
 		if (CurrentSlot.Item.Name.EqualTo(Item.Name) && Item.bIsStackable)
 		{
 			int32 AvailableSpaceInSlot = MaxStackSize - CurrentSlot.Quantity;
@@ -46,7 +56,7 @@ void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 				int32 QuantityToAddToSlot = FMath::Min(RemainingQuantity, AvailableSpaceInSlot);
 				CurrentSlot.Quantity += QuantityToAddToSlot;
 				RemainingQuantity -= QuantityToAddToSlot;
-                
+
 				OnSlotUpdate.Broadcast(SlotIndex);
 
 				if (RemainingQuantity == 0)
@@ -63,7 +73,7 @@ void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 	{
 		int32 QuantityForNewSlot = FMath::Min(RemainingQuantity, MaxStackSize);
 		int32 NewSlotIndex = CreateNewItem(Item, QuantityForNewSlot);
-        
+
 		if (NewSlotIndex != INDEX_NONE)
 		{
 			RemainingQuantity -= QuantityForNewSlot;
@@ -72,8 +82,8 @@ void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 		else
 		{
 			// Inventory is full
-			UE_LOG(LogTemp, Warning, TEXT("Inventory is full. Couldn't add %d %s"), 
-				   RemainingQuantity, *Item.Name.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Inventory is full. Couldn't add %d %s"),
+			       RemainingQuantity, *Item.Name.ToString());
 			break;
 		}
 	}
@@ -82,6 +92,7 @@ void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 // Get the index when mouse is clicked to the icon(button) - drag and drop or right click for all the items
 void USInventoryComponent::DropItem(const FItemData& Item, int32 Quantity)
 {
+	// TODO: Drag and drop system. Select how many items you want to drop.
 	const int32 Index = InventoryArray.IndexOfByPredicate([&Item](const FSlotData& DataElement)
 	{
 		return DataElement.Item.Name.EqualTo(Item.Name);
@@ -108,21 +119,38 @@ void USInventoryComponent::DropItem(const FItemData& Item, int32 Quantity)
 	}
 }
 
-void USInventoryComponent::ShowInventory()
+void USInventoryComponent::ToggleInventory()
 {
-	if (InventoryWidget)
+	if (PlayerController)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Inventory Is Visible"));
-		InventoryWidget->SetVisibility(ESlateVisibility::Visible);
-	}
-}
+		bIsMouseVisible = !bIsMouseVisible;
 
-void USInventoryComponent::HideInventory()
-{
-	if (InventoryWidget)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Inventory Is Invisible"));
-		InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+		UE_LOG(LogTemp, Log, TEXT("ToggleInventory called. bIsMouseVisible is now: %s"),
+		       bIsMouseVisible ? TEXT("true") : TEXT("false"));
+
+		if (bIsMouseVisible)
+		{
+			PlayerController->bShowMouseCursor = true;
+			PlayerController->SetInputMode(FInputModeGameAndUI());
+			FSlateApplication::Get().GetNavigationConfig()->bTabNavigation = false;
+
+			if (InventoryWidget)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Inventory Is Visible"));
+				InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+			}
+		}
+		else
+		{
+			PlayerController->bShowMouseCursor = false;
+			PlayerController->SetInputMode(FInputModeGameOnly());
+
+			if (InventoryWidget)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Inventory Is Invisible"));
+				InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+			}
+		}
 	}
 }
 
@@ -160,10 +188,10 @@ int32 USInventoryComponent::CreateNewItem(const FItemData& Item, const int32 Qua
 		const FSlotData NewItem(Item, Quantity, AvailableSlot);
 
 		InventoryArray[AvailableSlot] = NewItem;
-	
+
 		return AvailableSlot;
 	}
-	
+
 	UE_LOG(LogTemp, Warning, TEXT("No empty slot found in inventory"));
 	return INDEX_NONE;
 }
@@ -188,7 +216,7 @@ int32 USInventoryComponent::FindNextStackableItem(const FItemData& StackableItem
 		if (FoundItem.Item.Name.EqualTo(StackableItem.Name) && FoundItem.Item.bIsStackable)
 		{
 			const int32 AvailableSpaceInSlot = MaxStackSize - FoundItem.Quantity;
-			
+
 			if (AvailableSpaceInSlot > 0)
 			{
 				return FoundItem.SlotIndex;
