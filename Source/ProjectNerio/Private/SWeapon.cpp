@@ -15,6 +15,8 @@ ASWeapon::ASWeapon()
 
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
 	MeshComp->SetupAttachment(SphereComp);
+	
+	Quantity = 1;
 }
 
 void ASWeapon::Interact_Implementation(APawn* InstigatorPawn)
@@ -25,8 +27,7 @@ void ASWeapon::Interact_Implementation(APawn* InstigatorPawn)
 	}
 
 	USInventoryComponent* InventoryComp = Cast<USInventoryComponent>(InstigatorPawn->GetComponentByClass(USInventoryComponent::StaticClass()));
-	//USInventoryComponent* InventoryComponent = GetComponentByClass<USInventoryComponent>();
-	InventoryComp->Add(ItemData, 999); // This quantity can be changed
+	InventoryComp->Add(ItemData, Quantity); // This quantity need to be changed
 	Destroy();
 }
 
