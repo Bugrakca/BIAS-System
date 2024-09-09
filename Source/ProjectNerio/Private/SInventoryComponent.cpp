@@ -41,14 +41,16 @@ void USInventoryComponent::BeginPlay()
 
 void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 {
+	// TODO: Refactor for Drag and drop system.
+	// TODO: When dropping items into another slot, swap the slots if its not empty.
 	int32 RemainingQuantity = Quantity;
 
-	// First, try to stack with existing items
+	// Try to stack with existing items
 	for (int32 SlotIndex = 0; SlotIndex < InventoryArray.Num(); ++SlotIndex)
 	{
 		FSlotData& CurrentSlot = InventoryArray[SlotIndex];
 
-		if (CurrentSlot.Item.Name.EqualTo(Item.Name) && Item.bIsStackable)
+		if (Item.bIsStackable && CurrentSlot.Item.Name.EqualTo(Item.Name))
 		{
 			int32 AvailableSpaceInSlot = MaxStackSize - CurrentSlot.Quantity;
 			if (AvailableSpaceInSlot > 0)
@@ -185,9 +187,9 @@ int32 USInventoryComponent::CreateNewItem(const FItemData& Item, const int32 Qua
 
 	if (const int32 AvailableSlot = FindFirstAvailableSlot(); AvailableSlot != INDEX_NONE)
 	{
-		const FSlotData NewItem(Item, Quantity, AvailableSlot);
+		// const FSlotData NewItem(Item, Quantity, AvailableSlot);
 
-		InventoryArray[AvailableSlot] = NewItem;
+		InventoryArray[AvailableSlot] = FSlotData(Item, Quantity, AvailableSlot);
 
 		return AvailableSlot;
 	}
@@ -225,19 +227,4 @@ int32 USInventoryComponent::FindNextStackableItem(const FItemData& StackableItem
 	}
 	// All slots are full.
 	return INDEX_NONE;
-}
-
-TArray<FSlotData> USInventoryComponent::FindSimilarItems(TArray<FSlotData>& ItemArray, const FItemData& Item)
-{
-	TArray<FSlotData> FoundItems;
-
-	for (FSlotData& FoundItem : ItemArray)
-	{
-		if (FoundItem.Item.Name.EqualTo(Item.Name))
-		{
-			FoundItems.Add(FoundItem);
-		}
-	}
-
-	return FoundItems;
 }

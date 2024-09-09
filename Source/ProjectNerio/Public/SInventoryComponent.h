@@ -75,6 +75,4 @@ public:
 	void Add(const FItemData& Item, const int32 Quantity);
 
 	int32 CreateNewItem(const FItemData& Item, int32 Quantity);
-	
-	TArray<FSlotData> FindSimilarItems(TArray<FSlotData>& ItemArray, const FItemData& Item);
 };
