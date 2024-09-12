@@ -1,4 +1,6 @@
-**Inventory and Storage System with Categorization Prototype**
+<h1 align="center">
+  Inventory and Storage System with Categorization Prototype
+</h1>
 
 This project aims to create one storage for all items with Category tabs.
 For testing, I have to create an Inventory system too. I'm still making improvements.
