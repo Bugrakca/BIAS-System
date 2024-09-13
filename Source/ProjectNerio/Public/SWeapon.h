@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "SWeapon.generated.h"
 
+class USInventoryComponent;
 class USphereComponent;
 
 UCLASS()
@@ -21,9 +22,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MeshComp;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Item Data")
 	FItemData ItemData;
+
+	UPROPERTY(EditAnywhere, Category = "Item Data")
+	int32 Quantity;
 	
 public:
 	// Sets default values for this actor's properties

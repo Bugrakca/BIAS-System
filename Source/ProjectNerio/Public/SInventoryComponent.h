@@ -31,11 +31,10 @@ protected:
 	USInventoryComponent();
 
 	virtual void BeginPlay() override;
-
-	UFUNCTION(BlueprintCallable)
-	void DropItem(const FItemData& Item, int32 Quantity);
-
+	
 	void InitList(TArray<FSlotData>& Array, const int32 Size);
+
+	void SpawnDroppedItem(const FSlotData& SlotData, int32 Quantity);
 	
 	int32 FindFirstAvailableSlot() const;
 
@@ -75,4 +74,10 @@ public:
 	void Add(const FItemData& Item, const int32 Quantity);
 
 	int32 CreateNewItem(const FItemData& Item, int32 Quantity);
+
+	void SwapItems(int32 SourceIndex, int32 DroppedIndex);
+	
+	bool DropItem(int32 SlotIndex, int32 Quantity);
+
+	void StackItems(int32 DraggedIndex, int32 DroppedIndex);
 };

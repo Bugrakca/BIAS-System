@@ -13,4 +13,17 @@ UCLASS()
 class PROJECTNERIO_API USItemDrag : public UDragDropOperation
 {
 	GENERATED_BODY()
+
+public:
+	UPROPERTY()
+	TObjectPtr<UUserWidget> DraggedWidgetReference;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Drag and Drop")
+	int32 SlotIndex;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Drag and Drop")
+	UTexture2D* ItemImage;
+
+	UPROPERTY()
+	FVector2D DragOffset;
 };
