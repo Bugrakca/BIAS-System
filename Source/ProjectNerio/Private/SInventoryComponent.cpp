@@ -4,10 +4,16 @@
 #include "Framework/Application/NavigationConfig.h"
 #include "Kismet/GameplayStatics.h"
 
+// TODO: If right click any item when storage panel open, transfer that item and all quantity to first empty slot.
+
 // Sets default values for this component's properties
 USInventoryComponent::USInventoryComponent()
 {
 	InventoryWidget = nullptr;
+
+	PlayerController = nullptr;
+
+	bIsMouseVisible = false;
 
 	MaxStackSize = 999;
 
@@ -22,6 +28,7 @@ void USInventoryComponent::BeginPlay()
 
 	InitList(InventoryArray, 40);
 
+	// FIXME: When networking is added, this can be changed.
 	PlayerController = UGameplayStatics::GetPlayerController(this, 0);
 
 	if (PlayerController)
@@ -82,6 +89,7 @@ void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 		else
 		{
 			// Inventory is full
+			// FIXME: Add a UI popup for this.
 			UE_LOG(LogTemp, Warning, TEXT("Inventory is full. Couldn't add %d %s"),
 			       RemainingQuantity, *Item.Name.ToString());
 			break;
@@ -89,11 +97,9 @@ void USInventoryComponent::Add(const FItemData& Item, const int32 Quantity)
 	}
 }
 
-// Get the index when mouse is clicked to the icon(button) - drag and drop or right click for all the items
+// Get the index when the mouse is clicked on the item icon.
 bool USInventoryComponent::DropItem(int32 SlotIndex, int32 Quantity)
 {
-	// TODO: Drag and drop system. Select how many items you want to drop.
-	
 	if (SlotIndex >= 0 && SlotIndex < InventoryArray.Num() && !IsIndexEmpty(SlotIndex))
 	{
 		FSlotData& SlotData = InventoryArray[SlotIndex];
@@ -101,10 +107,10 @@ bool USInventoryComponent::DropItem(int32 SlotIndex, int32 Quantity)
 		{
 			SpawnDroppedItem(SlotData, Quantity);
 			SlotData.Quantity -= Quantity;
-            
+
 			if (SlotData.Quantity <= 0)
 			{
-				// Clear the slot if all items are dropped
+				// Clear the slot when all items are dropped.
 				InventoryArray[SlotIndex] = FSlotData();
 				InventoryArray[SlotIndex].SlotIndex = SlotIndex;
 			}
@@ -114,33 +120,40 @@ bool USInventoryComponent::DropItem(int32 SlotIndex, int32 Quantity)
 	return false;
 }
 
+int32 USInventoryComponent::TryStackItem(FSlotData& TargetSlot, const FItemData& Item, int32 RemainingQuantity, int32 SlotIndex)
+{
+	return 1;
+}
+
+// Stack the items by dragging and dropping.
 void USInventoryComponent::StackItems(int32 DraggedIndex, int32 DroppedIndex)
 {
-	// Stack items with drag and drop
 	FSlotData& DraggedItem = InventoryArray[DraggedIndex];
 	FSlotData& DroppedItem = InventoryArray[DroppedIndex];
 
 	int32 RemainingQuantity = DraggedItem.Quantity;
 
-	if (DraggedItem.Item.Name.EqualTo(DroppedItem.Item.Name) && DraggedItem.Item.bIsStackable && DroppedItem.Item.bIsStackable)
+	if (DraggedItem.Item.Name.EqualTo(DroppedItem.Item.Name) && DraggedItem.Item.bIsStackable && DroppedItem.Item.bIsStackable && DraggedIndex != DroppedIndex)
 	{
-		int32 SumQuantity = DraggedItem.Quantity + DroppedItem.Quantity;
-		int32 AvailableSpaceInSlot = MaxStackSize - SumQuantity;
-		
+		int32 AvailableSpaceInSlot = MaxStackSize - DroppedItem.Quantity;
+
 		if (AvailableSpaceInSlot > 0)
 		{
 			int32 QuantityToAddToSlot = FMath::Min(RemainingQuantity, AvailableSpaceInSlot);
-			DroppedItem.Quantity += DraggedItem.Quantity;
+			DroppedItem.Quantity += QuantityToAddToSlot;
 			RemainingQuantity -= QuantityToAddToSlot;
 
+			DraggedItem.Quantity = RemainingQuantity;
+
 			OnSlotUpdate.Broadcast(DroppedIndex);
+			OnSlotUpdate.Broadcast(DraggedIndex);
 
 			if (RemainingQuantity == 0)
 			{
 				UE_LOG(LogTemp, Log, TEXT("All items have been added."));
 				DraggedItem = FSlotData{};
 				OnSlotUpdate.Broadcast(DraggedIndex);
-				return; // All items have been added
+				// return; // All items have been added
 			}
 		}
 	}
@@ -179,16 +192,15 @@ void USInventoryComponent::ToggleInventory()
 			PlayerController->bShowMouseCursor = true;
 			PlayerController->SetInputMode(FInputModeGameAndUI());
 			FSlateApplication::Get().GetNavigationConfig()->bTabNavigation = false;
-			
+
 			UE_LOG(LogTemp, Log, TEXT("Inventory Is Visible"));
 			InventoryWidget->SetVisibility(ESlateVisibility::Visible);
-			
 		}
 		else
 		{
 			PlayerController->bShowMouseCursor = false;
 			PlayerController->SetInputMode(FInputModeGameOnly());
-			
+
 			UE_LOG(LogTemp, Log, TEXT("Inventory Is Invisible"));
 			InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
 		}
@@ -221,12 +233,13 @@ void USInventoryComponent::InitList(TArray<FSlotData>& Array, const int32 Size)
 
 void USInventoryComponent::SpawnDroppedItem(const FSlotData& SlotData, int32 Quantity)
 {
+	//FIXME: SpawnDroppedItem
 	if (GetWorld() && SlotData.Item.ItemClass)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Spawned Item Quantity: %d"), Quantity);
 		FVector SpawnLocation = GetOwner()->GetActorLocation() + FVector(100, 0, 0); // Offset from the player
 		FRotator SpawnRotation = FRotator::ZeroRotator;
-        
+
 		//ADroppedItem* DroppedItem = GetWorld()->SpawnActor<ADroppedItem>(SlotData.Item.ItemClass, SpawnLocation, SpawnRotation);
 		// if (DroppedItem)
 		// {
@@ -258,23 +271,23 @@ void USInventoryComponent::SwapItems(int32 DraggedIndex, int32 DroppedIndex)
 	{
 		// Swap the items
 		const FSlotData TempItem = InventoryArray[DraggedIndex];
-		
+
 		InventoryArray[DraggedIndex] = InventoryArray[DroppedIndex];
 		InventoryArray[DroppedIndex] = TempItem;
-        
+
 		InventoryArray[DroppedIndex].SlotIndex = DroppedIndex;
 		InventoryArray[DraggedIndex].SlotIndex = DraggedIndex;
-		
+
 		OnSlotUpdate.Broadcast(DroppedIndex);
 		OnSlotUpdate.Broadcast(DraggedIndex);
-		
+
 		// If the draggedItem is empty and the destination is not, do nothing
 		// This prevents creating items out of thin air		
-        
+
 		UE_LOG(LogTemp, Log, TEXT("SwapItems - Dragged Index: %d, Dropped Index: %d"), DraggedIndex, DroppedIndex);
-		UE_LOG(LogTemp, Log, TEXT("Dragged Empty: %s, Dropped Empty: %s"), 
-			IsIndexEmpty(DraggedIndex) ? TEXT("True") : TEXT("False"), 
-			IsIndexEmpty(DroppedIndex) ? TEXT("True") : TEXT("False"));
+		UE_LOG(LogTemp, Log, TEXT("Dragged Empty: %s, Dropped Empty: %s"),
+		       IsIndexEmpty(DraggedIndex) ? TEXT("True") : TEXT("False"),
+		       IsIndexEmpty(DroppedIndex) ? TEXT("True") : TEXT("False"));
 	}
 }
 
