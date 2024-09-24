@@ -110,9 +110,12 @@ bool USInventorySlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDra
 		const int32 AvailableSpaceInSlot = 999 - InventoryComp->InventoryArray[DroppedIndex].Quantity;
 
 		// Swap items between slots
-		if (AvailableSpaceInSlot > 0 && !InventoryComp->IsIndexEmpty(DroppedIndex))
+		if (InventoryComp->InventoryArray[DraggedIndex].Item.ItemClass == InventoryComp->InventoryArray[DroppedIndex].Item.ItemClass)
 		{
-			InventoryComp->StackItems(DraggedIndex, DroppedIndex);
+			if (AvailableSpaceInSlot > 0 && !InventoryComp->IsIndexEmpty(DroppedIndex))
+			{
+				InventoryComp->StackItems(DraggedIndex, DroppedIndex);
+			}
 		}
 		else
 		{
