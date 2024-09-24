@@ -31,8 +31,9 @@ void USInventoryWidget::GenerateSlotWidgets()
 {
 	SlotGrid->ClearChildren();
 	SlotWidgets.Empty();
+	const int32 ArrayLength = InventoryComp->InventoryArray.Num();
 
-	for (int32 Index = 0; Index < InventoryComp->InventoryArray.Num(); ++Index)
+	for (int32 Index = 0; Index < ArrayLength; ++Index)
 	{
 		if (USInventorySlotWidget* Widget = CreateWidget<USInventorySlotWidget>(GetWorld(), SlotWidgetClass))
 		{
