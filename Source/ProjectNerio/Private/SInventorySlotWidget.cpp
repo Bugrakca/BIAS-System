@@ -8,9 +8,9 @@
 #include "SItemDrag.h"
 #include "SQuantitySelectionWidget.h"
 #include "Components/Border.h"
-#include "Components/Button.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+
 
 void USInventorySlotWidget::NativeOnInitialized()
 {
@@ -22,23 +22,18 @@ void USInventorySlotWidget::NativeOnInitialized()
 void USInventorySlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
-	UE_LOG(LogTemp, Log, TEXT("This is the InventorySlotWidget NativeConstruct"));
 }
 
 void USInventorySlotWidget::UpdateSlot() const
 {
 	if (InventoryComp->IsIndexEmpty(UISlotIndex))
 	{
-		UE_LOG(LogTemp, Error, TEXT("Index is empty: %d"), UISlotIndex)
 		SlotIcon->SetVisibility(ESlateVisibility::Collapsed);
 		AmountText->SetText(FText::GetEmpty());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Index is not empty, set the button and icon: %d"), UISlotIndex)
 		auto& [Item, Quantity, SlotIndex] = InventoryComp->GetItemAtIndex(UISlotIndex);
-		UE_LOG(LogTemp, Warning, TEXT("Index is not empty, set the button and icon: %d"), SlotIndex)
 		AmountText->SetText(FText::AsNumber(Quantity));
 		SlotIcon->SetBrushFromTexture(Item.Icon);
 		SlotIcon->SetVisibility(ESlateVisibility::HitTestInvisible);
@@ -68,7 +63,7 @@ void USInventorySlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, co
 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
 
 	USItemDrag* DragDropOp = NewObject<USItemDrag>();
-	if (DragItemVisualClass && SlotIcon)
+	if (DragItemVisualClass && !InventoryComp->IsIndexEmpty(UISlotIndex))
 	{
 		const TObjectPtr<USDragItemVisual> DragItemVisual = CreateWidget<USDragItemVisual>(this, DragItemVisualClass);
 		UTexture2D* IconTexture = Cast<UTexture2D>(SlotIcon->GetBrush().GetResourceObject());
@@ -99,23 +94,23 @@ FReply USInventorySlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometr
 	{
 		return Reply.Handled().DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
 	}
-	
+
 	return Reply.Unhandled();
 }
 
 bool USInventorySlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
 	Super::NativeOnDrop(InGeometry, InDragDropEvent, InOperation);
-	
+
 	if (const TObjectPtr<USItemDrag> ItemDrag = Cast<USItemDrag>(InOperation))
 	{
 		int32 DraggedIndex = ItemDrag->SlotIndex;
 		int32 DroppedIndex = UISlotIndex;
 
-		UE_LOG(LogTemp, Log, TEXT("Before Swap - Source Index: %d, Destination Index: %d"), DraggedIndex, DroppedIndex);
+		const int32 AvailableSpaceInSlot = 999 - InventoryComp->InventoryArray[DroppedIndex].Quantity;
 
 		// Swap items between slots
-		if (InventoryComp->InventoryArray[DraggedIndex].Item.ItemClass == InventoryComp->InventoryArray[DroppedIndex].Item.ItemClass)
+		if (AvailableSpaceInSlot > 0 && !InventoryComp->IsIndexEmpty(DroppedIndex))
 		{
 			InventoryComp->StackItems(DraggedIndex, DroppedIndex);
 		}
@@ -123,13 +118,10 @@ bool USInventorySlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDra
 		{
 			InventoryComp->SwapItems(DraggedIndex, DroppedIndex);
 		}
-		
-
-		UE_LOG(LogTemp, Log, TEXT("After Swap - Source Index: %d, Destination Index: %d"), DraggedIndex, DroppedIndex);
 
 		return true;
 	}
-	
+
 
 	return false;
 }
@@ -140,8 +132,8 @@ void USInventorySlotWidget::NativeOnMouseEnter(const FGeometry& InGeometry, cons
 
 	bIsInventoryWidget = true;
 
-	UE_LOG(LogTemp, Log, TEXT("IsInventoryWidget: %s"), 
-			bIsInventoryWidget ? TEXT("True") : TEXT("False"));
+	UE_LOG(LogTemp, Log, TEXT("IsInventoryWidget: %s"),
+	       bIsInventoryWidget ? TEXT("True") : TEXT("False"));
 }
 
 void USInventorySlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
@@ -149,9 +141,9 @@ void USInventorySlotWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent
 	Super::NativeOnMouseLeave(InMouseEvent);
 
 	bIsInventoryWidget = false;
-	
-	UE_LOG(LogTemp, Log, TEXT("IsInventoryWidget: %s"), 
-			bIsInventoryWidget ? TEXT("True") : TEXT("False"));
+
+	UE_LOG(LogTemp, Log, TEXT("IsInventoryWidget: %s"),
+	       bIsInventoryWidget ? TEXT("True") : TEXT("False"));
 }
 
 void USInventorySlotWidget::OnDragCanceled(UDragDropOperation* DropOperation)
@@ -163,11 +155,11 @@ void USInventorySlotWidget::DropItemsOutsideInventory()
 {
 	if (InventoryComp && !InventoryComp->IsIndexEmpty(UISlotIndex))
 	{
-		 // Create and show the quantity selection widget
-		 if (USQuantitySelectionWidget* QuantityWidget = CreateWidget<USQuantitySelectionWidget>(GetWorld(), QuantitySelectionWidgetClass))
-		 {
-		 	QuantityWidget->SetInventorySlot(this);
-		 	QuantityWidget->AddToViewport();
-		 }
+		// Create and show the quantity selection widget
+		if (USQuantitySelectionWidget* QuantityWidget = CreateWidget<USQuantitySelectionWidget>(GetWorld(), QuantitySelectionWidgetClass))
+		{
+			QuantityWidget->SetInventorySlot(this);
+			QuantityWidget->AddToViewport();
+		}
 	}
 }
